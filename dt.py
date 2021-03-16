@@ -1,7 +1,9 @@
 import sklearn
 import pandas as pd
+import numpy as np
 from collections import Counter
 import math
+from restaurant import getARFFData
 
 from sklearn.datasets import load_iris
 
@@ -25,7 +27,7 @@ def remainder(attribute, classes) :
 ### For each column in the dataframe, compute the remainder and select the column with the lowest
 ### remainder
 
-def selectAttribute(data, classes)
+def selectAttribute(data, classes):
    pass
 
 ### Now we're ready to build a Decision Tree.
@@ -80,3 +82,7 @@ def makeNode(df, attributeDict) :
 
 
 
+def main():
+    a, b = getARFFData()
+    print(entropy(a))
+main()

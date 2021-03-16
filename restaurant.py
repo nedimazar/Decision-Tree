@@ -1,6 +1,6 @@
 ## pull ARFF data (restaurant data by default) into a pandas dataframe
 ## Note - this has only been tested with restaurant.arff.
-
+import pandas as pd
 
 def getARFFData(filename='restaurant.arff') :
     with open(filename) as rest :
