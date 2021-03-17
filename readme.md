@@ -14,7 +14,7 @@ A: it's a great day <br>
 X: it's sunny out<br>
 Y: It's the weekend<br>
 Z: There's no chores to do<br>
-F: it's raining<br>
+F: it's not raining<br>
 G: It's Saturday<br>
 B: The dishes are done<br>
 C: The laundry is done<br>
