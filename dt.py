@@ -74,7 +74,24 @@ class DecisionTree :
     
     def fit(self, X, y):
         self.root = self.makeNode(X, y)
+
+    ### We make the tree recursively. There are three base cases:
+    ### 1. All the data is of the same class.
+    ###   In this case, we are at a leaf node. set the value to be the classification.
+    ### 2. We are out of attributes to test.
+    ###   In this case, apply ZeroR.
+    ### 3 We are out of data
+    ###   In this case, apply ZeroR.
+    ### Return the node
+    ### Otherwise :
+    ###  1. Use selectAttribute to find the attribute with the largest information gain.
+    ###  2. Break the data into subsets according to each value of that attribute.
+    ###  3. For each subset, call makeNode
     
+    ### Inputs are:
+    ### X: The features
+    ### y: The classifications
+    ### parentVal: The classification that the parent would give in case we run out of data in a subset
     def makeNode(self, X, y, parentVal = None):
         if(len(y.unique()) == 1):
             return Node(attribute = None, value = y.unique()[0])
@@ -92,30 +109,10 @@ class DecisionTree :
                 
                 children.append(self.makeNode(subsetX, subsetY, parentVal = val))
                 
-            return(Node(attribute = attribute, value = parentVal, children = children))        
+            return(Node(attribute = attribute, value = parentVal, children = children))
+
     def predict(self, row):
         pass
-
-
-### construct a decision tree. Inputs are a pandas dataframe containing a dataset,
-### and an attributeDict that maps each attribute to the possible values it can take on.
-
-### We make the tree recursively. There are three base cases:
-### 1. All the data is of the same class.
-###   In this case, we are at a leaf node. set the value to be the classification.
-### 2. We are out of attributes to test.
-###   In this case, apply ZeroR.
-### 3 We are out of data
-###   In this case, apply ZeroR.
-### Return the node
-### Otherwise :
-###  1. Use selectAttribute to find the attribute with the largest information gain.
-###  2. Break the data into subsets according to each value of that attribute.
-###  3. For each subset, call makeNode
-
-def makeNode(df, attributeDict) :
-    pass
-
 
 
 def main():
@@ -126,6 +123,6 @@ def main():
     dt.fit(X, y)
 
     print(dt.root.children)
-    
+
 
 main()
