@@ -19,8 +19,12 @@ def entropy(classes) :
 
 ### Assume that both attribute and classes are pandas Series
 ### For each value of attribute, compute the entropy. Then return the weighted sum
-def remainder(attribute, classes) :
-   pass
+def remainder(attribute, classes):
+    remainder = 0
+    for val in attribute.unique():
+        subset = classes[attribute == val]
+        remainder = remainder + entropy(subset) * len(subset) / len(classes)
+    return remainder
 
 
 ### assume that data is a pandas dataframe, and classes is a pandas series
@@ -28,7 +32,15 @@ def remainder(attribute, classes) :
 ### remainder
 
 def selectAttribute(data, classes):
-   pass
+    minRemainder = 10e9
+    selected = None
+    
+    for attribute in data:
+        r = remainder(data[attribute], classes)
+        if r < minRemainder:
+            minRemainder = r
+            selected = attribute
+    return selected
 
 ### Now we're ready to build a Decision Tree.
 ### A tree consists of one or more Nodes.
@@ -36,10 +48,10 @@ def selectAttribute(data, classes):
 ### Or it is a non-leaf, in which case it has an attribute that it tests and a set of children.
 
 class Node :
-    def __init__(self, attribute=None, value=None):
+    def __init__(self, attribute=None, value=None, children = []):
         self.attribute = attribute
         self.value=value
-        self.children={}
+        self.children=children
 
     def isLeaf(self):
         return len(self.children) == 0
@@ -53,11 +65,35 @@ class Node :
 
 ##
 class DecisionTree :
-    def __init__(self, root) :
+    def __init__(self, root = None) :
         self.root = root
 
     ### assume instance is a pandas dataframe - use node.classify as a helper.
     def classify(self, instance):
+        pass
+    
+    def fit(self, X, y):
+        self.root = self.makeNode(X, y)
+    
+    def makeNode(self, X, y, parentVal = None):
+        if(len(y.unique()) == 1):
+            return Node(attribute = None, value = y.unique()[0])
+        elif X.empty:
+            return Node(attribute = None, value = parentVal)
+        else:
+            attribute = selectAttribute(X, y)
+            children = []
+            
+            for val in X[attribute].unique():
+                mask = X[attribute] == val
+                
+                subsetX = X[mask]
+                subsetY = y[mask]
+                
+                children.append(self.makeNode(subsetX, subsetY, parentVal = val))
+                
+            return(Node(attribute = attribute, value = parentVal, children = children))        
+    def predict(self, row):
         pass
 
 
@@ -84,5 +120,12 @@ def makeNode(df, attributeDict) :
 
 def main():
     a, b = getARFFData()
-    print(entropy(a))
+    X = a.drop(['WillWait'], axis = 1)
+    y = a['WillWait']
+    dt = DecisionTree()
+    dt.fit(X, y)
+
+    print(dt.root.children)
+    
+
 main()
