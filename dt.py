@@ -46,9 +46,8 @@ def selectAttribute(data, classes):
 ### A tree consists of one or more Nodes.
 ### A Node is either a leaf node, which has a value and no children
 ### Or it is a non-leaf, in which case it has an attribute that it tests and a set of children.
-
 class Node :
-    def __init__(self, attribute=None, value=None, children = []):
+    def __init__(self, attribute=None, value=None, children = {}):
         self.attribute = attribute
         self.value=value
         self.children=children
@@ -61,7 +60,7 @@ class Node :
        pass
 
     def __repr__(self) :
-        return "%s %s" % (self.attribute, self.value)
+        return "Attribute: %s | Value: %s" % (self.attribute, self.value)
 
 ##
 class DecisionTree :
@@ -73,56 +72,61 @@ class DecisionTree :
         pass
     
     def fit(self, X, y):
-        self.root = self.makeNode(X, y)
-
-    ### We make the tree recursively. There are three base cases:
-    ### 1. All the data is of the same class.
-    ###   In this case, we are at a leaf node. set the value to be the classification.
-    ### 2. We are out of attributes to test.
-    ###   In this case, apply ZeroR.
-    ### 3 We are out of data
-    ###   In this case, apply ZeroR.
-    ### Return the node
-    ### Otherwise :
-    ###  1. Use selectAttribute to find the attribute with the largest information gain.
-    ###  2. Break the data into subsets according to each value of that attribute.
-    ###  3. For each subset, call makeNode
+        zeroR = y.mode()[0]
+        self.root = self.makeNode(X, y, zeroR)
     
-    ### Inputs are:
-    ### X: The features
-    ### y: The classifications
-    ### parentVal: The classification that the parent would give in case we run out of data in a subset
-    def makeNode(self, X, y, parentVal = None):
-        if(len(y.unique()) == 1):
-            return Node(attribute = None, value = y.unique()[0])
-        elif X.empty:
-            return Node(attribute = None, value = parentVal)
-        else:
-            attribute = selectAttribute(X, y)
-            children = []
+    def makeNode(self, X, y, parentZeroR):
+        if len(y.unique()) == 1:
+            return Node(attribute = None, value = parentZeroR)
+        elif (X.shape[1] == 0) or X.empty:
+            mode = y.mode()[0]
+            return Node(attribute = None, value = mode)
+        
+        attribute = selectAttribute(X, y)
+        zeroR = y.mode()[0]
+        
+        children = {}
+        
+        for val in X[attribute].unique():
+            mask = X[attribute] == val
             
-            for val in X[attribute].unique():
-                mask = X[attribute] == val
-                
-                subsetX = X[mask]
-                subsetY = y[mask]
-                
-                children.append(self.makeNode(subsetX, subsetY, parentVal = val))
-                
-            return(Node(attribute = attribute, value = parentVal, children = children))
+            subsetX = X[mask]
+            subsetY = y[mask]
+            
+            children[val] =  self.makeNode(subsetX, subsetY, zeroR)
+            
+        return Node(attribute = attribute, value = None, children = children)
+            
+    def predict(self, rows):
+        predictions = []
+        for index, data in rows.iterrows():
+            predictions.append(self.classify(data, self.root))
+        return predictions
+    
+    def classify(self, row, node):
+        attribute = node.attribute
+        
+        if len(node.children) == 0 or attribute == None:
+            return node.value
+        
+        trueValue = row[attribute]
 
-    def predict(self, row):
-        pass
+        for x in node.children:
+            if x == trueValue:
+                node = node.children[x]
+                return self.classify(row, node)
 
 
 def main():
-    a, b = getARFFData()
-    X = a.drop(['WillWait'], axis = 1)
-    y = a['WillWait']
-    dt = DecisionTree()
-    dt.fit(X, y)
+    data = pd.read_csv('tennis.arff')
+    X = data.drop(['play'], axis=1)
+    y = data['play']
 
-    print(dt.root.children)
+    d = DecisionTree()
+    d.fit(X, y)
 
+    predictions = d.predict(X)
+
+    print(predictions)
 
 main()
