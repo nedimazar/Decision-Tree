@@ -1,4 +1,7 @@
 import sklearn
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 import pandas as pd
 import numpy as np
 from collections import Counter
@@ -66,16 +69,14 @@ class Node :
 class DecisionTree :
     def __init__(self, root = None) :
         self.root = root
-
-    ### assume instance is a pandas dataframe - use node.classify as a helper.
-    def classify(self, instance):
-        pass
     
     def fit(self, X, y):
         zeroR = y.mode()[0]
         self.root = self.makeNode(X, y, zeroR)
     
-    def makeNode(self, X, y, parentZeroR):
+    def makeNode(self, X, y, parentZeroR, depth = 0):
+        if depth >= X.shape[1]:
+            return Node(attribute = None, value = parentZeroR)
         if len(y.unique()) == 1:
             return Node(attribute = None, value = parentZeroR)
         elif (X.shape[1] == 0) or X.empty:
@@ -89,11 +90,11 @@ class DecisionTree :
         
         for val in X[attribute].unique():
             mask = X[attribute] == val
-            
+                        
             subsetX = X[mask]
             subsetY = y[mask]
             
-            children[val] =  self.makeNode(subsetX, subsetY, zeroR)
+            children[val] =  self.makeNode(subsetX, subsetY, zeroR, depth+1)
             
         return Node(attribute = attribute, value = None, children = children)
             
@@ -107,7 +108,10 @@ class DecisionTree :
         attribute = node.attribute
         
         if len(node.children) == 0 or attribute == None:
-            return node.value
+            if node.value:
+                return node.value
+            else:
+                return "Something is wrong here."
         
         trueValue = row[attribute]
 
@@ -116,17 +120,93 @@ class DecisionTree :
                 node = node.children[x]
                 return self.classify(row, node)
 
+def trainAndValidate(splits, goal):
+    precision = 0.0
+
+    for train, test in splits:
+        trainX = train.drop([goal], axis = 1)
+        trainY = train[goal]
+        
+        testX = test.drop([goal], axis = 1)
+        testY = test[goal]
+        
+        tree = DecisionTree()
+        tree.fit(trainX, trainY)
+        predictions = tree.predict(testX)
+
+        precision = precision + (getScore(testY, predictions) * 1/len(splits))
+    return precision
+
+def getScore(trueValues, predictions):
+    score = 0
+    for a, b in zip(trueValues, predictions):
+        if a is b:
+            score = score + (1/len(trueValues))
+    return score
+
+def getSplits(data, n = 5):
+    splits = []
+    chunks = np.array_split(data, n)
+
+    for x in chunks:
+        splits.append((pd.concat([y for y in chunks if not x is y]), x))
+    
+    return splits
+
+def getSkScore(splits, goal):
+    precision = 0.0
+
+    for train, test in splits:
+        trainX = train.drop([goal], axis = 1)
+        trainY = train[goal]
+        
+        testX = test.drop([goal], axis = 1)
+        testY = test[goal]
+        
+        # Feel free to change the criterion
+        tree = DecisionTreeClassifier(criterion = 'entropy')
+        tree.fit(trainX, trainY)
+        predictions = tree.predict(testX)
+
+        precision = precision + (getScore(testY, predictions) * 1/len(splits))
+    return precision
+
+def printEnsembleScores(splits, goal):
+    for nestimators in [2, 5, 10]:
+        for sampleRatio in [0.25, 0.5, 1.0]:
+            precision = 0.0
+            for train, test in splits:
+                trainX = train.drop([goal], axis = 1)
+                trainY = train[goal]
+                
+                testX = test.drop([goal], axis = 1)
+                testY = test[goal]
+
+                forest = RandomForestClassifier()
+                forest.fit(trainX, trainY)
+                predictions = forest.predict(testX)
+                precision = precision + (getScore(testY, predictions) * 1/len(splits))
+            print(f"sklearn forest [estimators: {nestimators}, samples: {sampleRatio}]: {precision}")
+
+                
 
 def main():
-    data = pd.read_csv('tennis.arff')
-    X = data.drop(['play'], axis=1)
-    y = data['play']
+    cancer = pd.read_csv('cancer.arff')
+    csplits = getSplits(cancer, 5)
+    myScore = trainAndValidate(csplits, 'Class')
 
-    d = DecisionTree()
-    d.fit(X, y)
+    x = cancer.drop(['Class'], axis = 1)
+    y = cancer['Class']
+    skcancer = pd.get_dummies(x)
+    skcancer['Class'] = y
+    sksplits = getSplits(skcancer, 5)
+    skscore = getSkScore(sksplits, 'Class')
 
-    predictions = d.predict(X)
+    print(f"My score: {myScore}")
+    print(f'sklearn score: {skscore}')
 
-    print(predictions)
+    printEnsembleScores(sksplits, 'Class')
+
+
 
 main()

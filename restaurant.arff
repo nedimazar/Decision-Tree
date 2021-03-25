@@ -1,18 +1,4 @@
-@relation restaurant
-
-@attribute AlternateNearby {Yes, No}
-@attribute HasBar  {Yes, No}
-@attribute IsFridayOrSaturday  {Yes, No}
-@attribute Hungry  {Yes, No}
-@attribute HowCrowded  {None, Some, Full}
-@attribute Price  {$, $$, $$$}
-@attribute Raining  {Yes, No}
-@attribute Reservations {Yes, No}
-@attribute Type  {French, Thai, Burger, Italian}
-@attribute WaitingTime {0-10, 10-30, 30-60, >60}
-@attribute WillWait  {Yes, No}
-
-@data
+AlternateNearby,HasBar,IsFridayOrSaturday,Hungry,HowCrowded,Price,Raining,Reservations,Type,WaitingTime,WillWait
 Yes, No, No, Yes, Some, $$$, No, Yes, French, 0-10, Yes
 Yes, No, No, Yes, Full, $, No, No, Thai, 30-60, No
 No, Yes, No, No, Some, $, No, No, Burger, 0-10, Yes
